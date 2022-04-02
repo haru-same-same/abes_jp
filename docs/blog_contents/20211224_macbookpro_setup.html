@@ -114,10 +114,41 @@
           <li>Apple musicで音楽再生</li>
         </ul>
         <p>でメモリを60%ぐらい使っている感じなので、増設しておいてよかったと思う。</p>
+        <h2>セットアップ方針</h2>
+        <p>絶対にRosetta2を使ってはいけない縛りでセットアップした。</p>
+        <h2>GUIアプリケーション</h2>
+        <p>もうM1が発売されてから1年くらい経っているので、今まで自分が使っていたアプリの多くがM1対応になっていた。<br>
+        なのでほとんど苦労はしなかったが、Dropboxが未だにM1未対応だったのでGoogle driveに乗り換えた。<br>
+        以下のアプリはRosetta2なしでインストールできた。</p>
+        <ul>
+          <li>Firefox</li>
+          <li>1password</li>
+          <li>Zoom</li>
+          <li>VSCode</li>
+          <li>Slack</li>
+          <li>Hyper</li>
+          <li>RunCat</li>
+          <li>Microsoft office</li>
+          <li>Typora</li>
+          <li>Google drive</li>
+          <li>Karabiner</li>
+          <li>Skim</li>
+          <li>Docker desktop</li>
+        </ul>
+        <h2>CLIアプリケーション</h2>
+        <h3>prezto</h3>
+        <pre><code class="prettyprint">
+        $ git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
+        $ setopt EXTENDED_GLOB
+          for rcfile in "${ZDOTDIR:-$HOME}"/.zprezto/runcoms/^README.md(.N); do
+            ln -s "$rcfile" "${ZDOTDIR:-$HOME}/.${rcfile:t}"
+          done
+        </code></pre>
       </div>
     </div>
   </div>
   
+  <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
   <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
   <script src="./js/bootstrap.min.js"></script>
