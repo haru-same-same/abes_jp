@@ -22,3 +22,7 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# Samsung Health の書き出しデータ（健康データなので絶対にコミットしない）
+health-data/*
+!health-data/README.md

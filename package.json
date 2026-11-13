@@ -9,7 +9,9 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "import-runs": "node scripts/import-runs.mjs",
+    "update-runs": "node scripts/update-runs.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^8.1.5",

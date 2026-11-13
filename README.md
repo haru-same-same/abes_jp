@@ -16,3 +16,15 @@ npm run preview  # ビルド結果を確認
 ## デプロイ
 
 `master` へ push すると GitHub Actions（`.github/workflows/deploy.yml`）で GitHub Pages にデプロイされる。
+
+## 走行距離の更新（Samsung Health から取り込み）
+
+トップページの「走行距離」は `src/data/runs.json` の月ごとの合計を表示する。月に1回くらい、次の手順で更新する。
+
+1. スマホの Samsung Health で「設定 → 個人データをダウンロード」を実行する
+2. 書き出されたフォルダ（または zip）を `health-data/` にコピーする
+3. `npm run update-runs` を実行する
+
+`update-runs` は `health-data/` の一番新しい書き出しを集計して `src/data/runs.json` を更新し、そのファイルだけをコミットして push する。集計だけしたいときは `npm run import-runs -- <フォルダ>` を使う。
+
+`health-data/` の中身は `.gitignore` で除外していて、コミットされない（書き出しには心拍数などの健康データが含まれるため）。リポジトリに入るのは月ごとの合計距離だけ。

@@ -7,17 +7,34 @@ import Header from '../components/Header.astro';
 import PostList from '../components/PostList.astro';
 import { AUTHOR, SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 import { certifications, profile, running } from '../data/profile';
+import runs from '../data/runs.json';
 import { getPosts } from '../lib/posts';
 
 const posts = await getPosts();
 const latest = posts[0];
 const recent = posts.slice(1, 5);
 
-// 走行距離のグラフ：データがなければ飾りの形を表示
-const decorative = running.history.length === 0;
-const history = decorative ? [40, 65, 30, 85, 55, 100] : running.history.slice(-6);
+// 走行距離：Samsung Health から取り込んだ runs.json（npm run import-runs）を使う。
+// 「今月」は取り込んだ日（日本時間）の月。
+const months = runs.months as Record<string, number>;
+const importedAt = runs.updatedAt ? new Date(Date.parse(runs.updatedAt) + 9 * 3600 * 1000) : null;
+const monthKeys = importedAt
+	? Array.from({ length: 6 }, (_, i) =>
+			new Date(Date.UTC(importedAt.getUTCFullYear(), importedAt.getUTCMonth() - 5 + i, 1)).toISOString().slice(0, 7),
+		)
+	: [];
+const currentKey = monthKeys.at(-1);
+const monthKm = currentKey ? (months[currentKey] ?? 0) : null;
+const monthLabel = currentKey ? `${Number(currentKey.slice(5))}月` : '今月';
+
+// グラフ：データがなければ飾りの形を表示
+const decorative = monthKeys.length === 0;
+const history = decorative ? [40, 65, 30, 85, 55, 100] : monthKeys.map((k) => months[k] ?? 0);
 const maxKm = Math.max(...history, 1);
-const bars = history.map((v, i) => ({ height: (v / maxKm) * 100, last: i === history.length - 1 }));
+const bars = history.map((v, i) => ({ height: Math.max((v / maxKm) * 100, 4), last: i === history.length - 1 }));
+const historyLabel = decorative
+	? undefined
+	: `月ごとの走行距離：${monthKeys.map((k, i) => `${Number(k.slice(5))}月 ${history[i]} km`).join('、')}`;
 
 const interestTones = ['blue', 'lavender', 'mint'];
 ---
@@ -89,9 +106,9 @@ const interestTones = ['blue', 'lavender', 'mint'];
 				}
 
 				<section class="card run" aria-labelledby="run-label">
-					<h2 id="run-label" class="label">02 — 今月の走行距離</h2>
-					<p class="km display">{running.monthKm ?? '—'}<span> km</span></p>
-					<div class="bars" aria-hidden="true">
+					<h2 id="run-label" class="label">02 — {monthLabel}の走行距離</h2>
+					<p class="km display">{monthKm ?? '—'}<span> km</span></p>
+					<div class="bars" role={historyLabel ? 'img' : undefined} aria-label={historyLabel} aria-hidden={historyLabel ? undefined : 'true'}>
 						{bars.map((b) => <span class:list={{ last: b.last }} style={`height: ${b.height}%`}></span>)}
 					</div>
 					<p class="small">次のレース：{running.nextRace}</p>
