@@ -1,0 +1,62 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import CategoryTag from './CategoryTag.astro';
+import FormattedDate from './FormattedDate.astro';
+
+interface Props {
+	posts: CollectionEntry<'blog'>[];
+}
+const { posts } = Astro.props;
+---
+
+{
+	posts.length === 0 ? (
+		<p class="empty">まだ記事がありません。</p>
+	) : (
+		<ul>
+			{posts.map((post) => (
+				<li>
+					<a href={`/blog/${post.id}/`}>
+						<span class="date">
+							<FormattedDate date={post.data.pubDate} />
+						</span>
+						<span class="title">{post.data.title}</span>
+						<CategoryTag category={post.data.category} />
+					</a>
+				</li>
+			))}
+		</ul>
+	)
+}
+
+<style>
+	ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	li + li {
+		border-top: 1px dashed var(--line);
+	}
+	a {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 4px 20px;
+		padding: 18px 0;
+	}
+	.date {
+		width: 100px;
+		font-family: var(--font-mono);
+		font-size: 13px;
+		color: var(--muted);
+	}
+	.title {
+		flex: 1 1 260px;
+		font-weight: 700;
+	}
+	.empty {
+		margin: 16px 0;
+		color: var(--muted);
+	}
+</style>

@@ -1,59 +1,460 @@
 ---
 import BaseHead from '../components/BaseHead.astro';
+import CategoryTag from '../components/CategoryTag.astro';
 import Footer from '../components/Footer.astro';
+import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import PostList from '../components/PostList.astro';
+import { AUTHOR, SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import { certifications, profile, running } from '../data/profile';
+import { getPosts } from '../lib/posts';
+
+const posts = await getPosts();
+const latest = posts[0];
+const recent = posts.slice(1, 5);
+
+// 走行距離のグラフ：データがなければ飾りの形を表示
+const decorative = running.history.length === 0;
+const history = decorative ? [40, 65, 30, 85, 55, 100] : running.history.slice(-6);
+const maxKm = Math.max(...history, 1);
+const bars = history.map((v, i) => ({ height: (v / maxKm) * 100, last: i === history.length - 1 }));
+
+const interestTones = ['blue', 'lavender', 'mint'];
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="ja">
 	<head>
 		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
 	</head>
 	<body>
 		<Header />
-		<main>
-			<h1>🧑‍🚀 Hello, Astronaut!</h1>
-			<p>
-				Welcome to the official <a href="https://astro.build/">Astro</a> blog starter template. This
-				template serves as a lightweight, minimally-styled starting point for anyone looking to
-				build a personal website, blog, or portfolio with Astro.
-			</p>
-			<p>
-				This template comes with a few integrations already configured in your{' '}
-				<code>astro.config.mjs</code> file. You can customize your setup with{' '}
-				<a href="https://astro.build/integrations">Astro Integrations</a> to add tools like
-				Tailwind, React, or Vue to your project.
-			</p>
-			<p>Here are a few ideas on how to get started with the template:</p>
-			<ul>
-				<li>
-					Edit this page in <code>src/pages/index.astro</code>
-				</li>
-				<li>
-					Edit the site header items in <code>src/components/Header.astro</code>
-				</li>
-				<li>
-					Add your name to the footer in <code>src/components/Footer.astro</code>
-				</li>
-				<li>
-					Check out the included blog posts in <code>src/content/blog/</code>
-				</li>
-				<li>
-					Customize the blog post page layout in <code>src/layouts/BlogPost.astro</code>
-				</li>
-			</ul>
-			<p>
-				Have fun! If you get stuck, remember to{' '}
-				<a href="https://docs.astro.build/">read the docs</a> or{' '}
-				<a href="https://astro.build/chat">join us on Discord</a> to ask questions.
-			</p>
-			<p>
-				Looking for a blog template with a bit more personality? Check out{' '}
-				<a href="https://github.com/Charca/astro-blog-template">astro-blog-template</a> by{' '}
-				<a href="https://twitter.com/Charca">Maxi Ferreira</a>.
-			</p>
+		<main class="container bento">
+			<div class="row">
+				<section class="card hero wide" aria-labelledby="hero-name">
+					<svg class="scatter" width="300" height="200" viewBox="0 0 300 200" fill="none" aria-hidden="true">
+						<path d="M10 180 L290 40" stroke="#2F5BB7" stroke-width="2.5" stroke-dasharray="6 6" stroke-linecap="round"></path>
+						<circle cx="30" cy="168" r="7" fill="#FFFFFF"></circle>
+						<circle cx="62" cy="140" r="9" fill="#F4A98A"></circle>
+						<circle cx="96" cy="150" r="6" fill="#FFFFFF"></circle>
+						<circle cx="120" cy="118" r="10" fill="#B9A8EE"></circle>
+						<circle cx="158" cy="112" r="7" fill="#FFFFFF"></circle>
+						<circle cx="186" cy="88" r="8" fill="#8FD3BB"></circle>
+						<circle cx="214" cy="96" r="6" fill="#FFFFFF"></circle>
+						<circle class="now-dot" cx="248" cy="62" r="12" fill="#2F5BB7"></circle>
+						<circle class="now-ring" cx="248" cy="62" r="20" stroke="#2F5BB7" stroke-width="2"></circle>
+					</svg>
+					<span class="bubble" aria-hidden="true">いまここ</span>
+					<div class="hero-text">
+						<h1 id="hero-name" class="display">{AUTHOR}</h1>
+						<p>{profile.role}。<br />{profile.bio}</p>
+					</div>
+				</section>
+
+				<section class="card profile" aria-label="プロフィール">
+					<div class="avatar" aria-hidden="true">SA</div>
+					<div>
+						<p class="role display">{profile.role}</p>
+						<p class="now">{profile.now}</p>
+					</div>
+					<ul class="chips">
+						{profile.interests.map((t, i) => <li class={interestTones[i % interestTones.length]}>{t}</li>)}
+					</ul>
+				</section>
+			</div>
+
+			<div class="row">
+				{
+					latest ? (
+						<a href={`/blog/${latest.id}/`} class="card latest wide">
+							<div class="latest-head">
+								<span class="label">01 — 最新の記事</span>
+								<span class="arrow" aria-hidden="true">
+									<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+								</span>
+							</div>
+							<span class="latest-title display">{latest.data.title}</span>
+							<span class="latest-desc">{latest.data.description}</span>
+							<span class="latest-meta">
+								<CategoryTag category={latest.data.category} />
+								<span class="mono"><FormattedDate date={latest.data.pubDate} /></span>
+							</span>
+						</a>
+					) : (
+						<section class="card latest wide">
+							<span class="label">01 — 最新の記事</span>
+							<p class="latest-desc">まだ記事がありません。</p>
+						</section>
+					)
+				}
+
+				<section class="card run" aria-labelledby="run-label">
+					<h2 id="run-label" class="label">02 — 今月の走行距離</h2>
+					<p class="km display">{running.monthKm ?? '—'}<span> km</span></p>
+					<div class="bars" aria-hidden="true">
+						{bars.map((b) => <span class:list={{ last: b.last }} style={`height: ${b.height}%`}></span>)}
+					</div>
+					<p class="small">次のレース：{running.nextRace}</p>
+				</section>
+			</div>
+
+			<div class="row">
+				<section class="card certs" aria-labelledby="certs-label">
+					<h2 id="certs-label" class="label">03 — 資格コレクション</h2>
+					<ul class="badges">
+						{
+							certifications.acquired.map((name) => (
+								<li>
+									<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5A45B0" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg>
+									{name}
+								</li>
+							))
+						}
+					</ul>
+					{
+						certifications.current && (
+							<div class="challenge">
+								<div class="challenge-head">
+									<span>挑戦中：{certifications.current.name}</span>
+									<span class="mono">{certifications.current.progress}%</span>
+								</div>
+								<div class="progress" role="progressbar" aria-valuenow={certifications.current.progress} aria-valuemin="0" aria-valuemax="100" aria-label={`${certifications.current.name} の進み具合`}>
+									<span style={`width: ${certifications.current.progress}%`}></span>
+								</div>
+							</div>
+						)
+					}
+				</section>
+
+				<section class="card posts wide" aria-labelledby="posts-label">
+					<div class="posts-head">
+						<h2 id="posts-label" class="label">04 — 記事一覧</h2>
+						<a href="/blog/">すべて見る →</a>
+					</div>
+					<PostList posts={recent} />
+				</section>
+			</div>
 		</main>
 		<Footer />
 	</body>
 </html>
+
+<style>
+	.bento {
+		display: flex;
+		flex-direction: column;
+		gap: var(--gap);
+	}
+	.row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--gap);
+	}
+	.row > * {
+		flex: 1 1 280px;
+	}
+	.row > .wide {
+		flex: 2 1 540px;
+	}
+	.mono {
+		font-family: var(--font-mono);
+		font-size: 13px;
+		color: var(--muted);
+	}
+	.small {
+		margin: 0;
+		font-size: 14px;
+	}
+
+	/* ヒーロー */
+	.hero {
+		position: relative;
+		overflow: hidden;
+		min-height: 400px;
+		padding: 44px;
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-end;
+		background-color: var(--blue);
+		background-image:
+			linear-gradient(rgba(20, 33, 61, 0.07) 1px, transparent 1px),
+			linear-gradient(90deg, rgba(20, 33, 61, 0.07) 1px, transparent 1px);
+		background-size: 28px 28px;
+	}
+	.scatter {
+		position: absolute;
+		right: 28px;
+		top: 70px;
+	}
+	.now-ring {
+		opacity: 0.35;
+		transform-origin: 248px 62px;
+		animation: pulse 2.4s ease-out infinite;
+	}
+	@keyframes pulse {
+		0% { transform: scale(0.7); opacity: 0.5; }
+		100% { transform: scale(1.5); opacity: 0; }
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.now-ring { animation: none; }
+	}
+	.bubble {
+		position: absolute;
+		right: 24px;
+		top: 30px;
+		padding: 6px 12px;
+		border-radius: 12px 12px 12px 4px;
+		background: var(--ink);
+		color: #fff;
+		font-size: 13px;
+		font-weight: 500;
+	}
+	.hero-text {
+		position: relative;
+	}
+	.hero h1 {
+		margin: 0 0 16px;
+		font-size: clamp(48px, 7vw, 78px);
+		line-height: 1.05;
+		font-weight: 900;
+	}
+	.hero p {
+		margin: 0;
+		max-width: 460px;
+		font-size: 17px;
+		line-height: 1.9;
+		color: var(--ink-soft);
+	}
+	@media (max-width: 640px) {
+		.hero {
+			padding: 28px;
+			min-height: 0;
+		}
+		.scatter {
+			position: relative;
+			right: auto;
+			top: auto;
+			width: 100%;
+			height: auto;
+			max-width: 300px;
+			align-self: flex-end;
+			margin-top: 36px;
+			margin-bottom: 8px;
+		}
+		.bubble {
+			top: 20px;
+			right: 20px;
+		}
+	}
+
+	/* プロフィール */
+	.profile {
+		display: flex;
+		flex-direction: column;
+		gap: 20px;
+	}
+	.avatar {
+		width: 92px;
+		height: 92px;
+		border-radius: 50%;
+		background: var(--blue);
+		box-shadow: 0 0 0 4px #fff, 0 0 0 6px var(--blue);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-family: var(--font-display);
+		font-weight: 900;
+		font-size: 26px;
+		color: var(--blue-ink);
+	}
+	.role {
+		margin: 0 0 4px;
+		font-size: 20px;
+		font-weight: 700;
+	}
+	.now {
+		margin: 0;
+		font-size: 15px;
+		line-height: 1.7;
+		color: var(--muted);
+	}
+	.chips {
+		list-style: none;
+		margin: auto 0 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+	.chips li {
+		padding: 4px 12px;
+		border-radius: 999px;
+		font-size: 13px;
+		font-weight: 500;
+	}
+	.chips .blue { background: var(--blue); color: var(--blue-ink); }
+	.chips .lavender { background: var(--lavender); color: var(--lavender-ink); }
+	.chips .mint { background: var(--mint); color: var(--mint-ink); }
+
+	/* 最新の記事 */
+	.latest {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+	}
+	a.latest:hover {
+		color: inherit;
+		transform: translateY(-3px);
+		box-shadow: 0 16px 32px -20px rgba(20, 33, 61, 0.35);
+	}
+	.latest-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 8px;
+	}
+	.arrow {
+		width: 44px;
+		height: 44px;
+		border-radius: 50%;
+		background: var(--blue);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: transform 0.2s ease;
+	}
+	a.latest:hover .arrow {
+		transform: translateX(4px);
+	}
+	.latest-title {
+		font-size: 28px;
+		line-height: 1.45;
+		font-weight: 700;
+	}
+	.latest-desc {
+		margin: 0;
+		font-size: 15px;
+		color: var(--muted);
+	}
+	.latest-meta {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 8px;
+		padding-top: 4px;
+	}
+
+	/* ランニング */
+	.run {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+		background: var(--mint);
+		color: var(--mint-ink);
+	}
+	.run .label {
+		color: var(--mint-ink);
+	}
+	.km {
+		margin: 0;
+		font-size: 44px;
+		font-weight: 900;
+		line-height: 1;
+		color: var(--ink);
+	}
+	.km span {
+		font-size: 20px;
+		font-weight: 700;
+	}
+	.bars {
+		display: flex;
+		align-items: flex-end;
+		gap: 8px;
+		height: 80px;
+	}
+	.bars span {
+		flex: 1;
+		border-radius: 6px;
+		background: var(--mint-bar);
+	}
+	.bars span.last {
+		background: var(--mint-strong);
+	}
+
+	/* 資格 */
+	.certs {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		background: var(--lavender);
+		color: var(--lavender-ink);
+	}
+	.certs .label {
+		color: var(--lavender-ink);
+	}
+	.badges {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 8px;
+	}
+	.badges li {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 10px 12px;
+		border-radius: 14px;
+		background: #fff;
+		font-size: 13px;
+		font-weight: 500;
+		color: var(--ink);
+	}
+	.challenge {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+	.challenge-head {
+		display: flex;
+		justify-content: space-between;
+		gap: 8px;
+		font-size: 14px;
+	}
+	.challenge-head .mono {
+		color: var(--lavender-ink);
+	}
+	.progress {
+		height: 10px;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.8);
+		overflow: hidden;
+	}
+	.progress span {
+		display: block;
+		height: 100%;
+		border-radius: 999px;
+		background: var(--lavender-bar);
+	}
+
+	/* 記事一覧 */
+	.posts {
+		padding-top: 16px;
+		padding-bottom: 20px;
+	}
+	.posts-head {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		align-items: baseline;
+		gap: 12px;
+		padding: 16px 0 6px;
+	}
+	.posts-head a {
+		font-size: 14px;
+		font-weight: 500;
+		color: var(--link);
+	}
+</style>

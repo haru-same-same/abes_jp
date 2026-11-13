@@ -1,0 +1,39 @@
+---
+import type { Category } from '../content.config';
+
+interface Props {
+	category: Category;
+}
+const { category } = Astro.props;
+const tone = { 分析: 'blue', 資格: 'lavender', ランニング: 'mint', その他: 'gray' }[category];
+---
+
+<span class:list={['tag', tone]}>{category}</span>
+
+<style>
+	.tag {
+		display: inline-block;
+		padding: 2px 10px;
+		border-radius: 999px;
+		font-size: 12px;
+		font-weight: 700;
+		line-height: 1.8;
+		white-space: nowrap;
+	}
+	.blue {
+		background: var(--blue);
+		color: var(--blue-ink);
+	}
+	.lavender {
+		background: var(--lavender);
+		color: var(--lavender-ink);
+	}
+	.mint {
+		background: var(--mint);
+		color: var(--mint-ink);
+	}
+	.gray {
+		background: #e7eaf0;
+		color: var(--muted);
+	}
+</style>

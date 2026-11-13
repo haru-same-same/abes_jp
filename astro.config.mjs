@@ -10,26 +10,25 @@ export default defineConfig({
 	integrations: [mdx(), sitemap()],
 	fonts: [
 		{
-			provider: fontProviders.local(),
-			name: 'Atkinson',
-			cssVariable: '--font-atkinson',
+			provider: fontProviders.google(),
+			name: 'Zen Maru Gothic',
+			cssVariable: '--font-display',
+			weights: [500, 700, 900],
 			fallbacks: ['sans-serif'],
-			options: {
-				variants: [
-					{
-						src: ['./src/assets/fonts/atkinson-regular.woff'],
-						weight: 400,
-						style: 'normal',
-						display: 'swap',
-					},
-					{
-						src: ['./src/assets/fonts/atkinson-bold.woff'],
-						weight: 700,
-						style: 'normal',
-						display: 'swap',
-					},
-				],
-			},
+		},
+		{
+			provider: fontProviders.google(),
+			name: 'Noto Sans JP',
+			cssVariable: '--font-body',
+			weights: [400, 500, 700],
+			fallbacks: ['sans-serif'],
+		},
+		{
+			provider: fontProviders.google(),
+			name: 'IBM Plex Mono',
+			cssVariable: '--font-mono',
+			weights: [400, 500],
+			fallbacks: ['monospace'],
 		},
 	],
 });
