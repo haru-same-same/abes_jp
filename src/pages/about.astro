@@ -20,7 +20,58 @@ import { profile } from '../data/profile';
 				<p class="lead">{profile.role}。{profile.bio}</p>
 				<div class="prose">
 					<h2>経歴</h2>
-					<p>[ここに経歴を書く]</p>
+					<p>
+						神戸大学大学院 理学研究科 物理学専攻 粒子物理学研究室（修士課程）<br />
+						信州大学 理学部 理学科 物理学コース
+					</p>
+
+					<h3>研究</h3>
+					<ul>
+						<li>高輝度LHC-ATLAS実験に向けたAIトリガーの研究</li>
+						<li>KEKテストビームラインのための電磁石制御システムの開発</li>
+					</ul>
+
+					<h3>発表</h3>
+					<ul class="history">
+						<li>
+							<span class="when">2021/9/14</span>
+							高輝度LHC-ATLAS実験に向けた検出器の様々な運転状況に対応可能なAIトリガーの可能性<br />
+							<small>口頭 / 日本物理学会2021秋季大会（オンライン）</small>
+						</li>
+						<li>
+							<span class="when">2020/2/22</span>
+							機械学習を用いたトップクォークの新たな運動学的再構成手法の開発<br />
+							<small>口頭 / KEKサマーチャレンジ世代間交流会（KEK）</small>
+						</li>
+						<li>
+							<span class="when">2019/3/3</span>
+							宇宙線ミューオンのβ崩壊からニュートリノの質量を探る<br />
+							<small>ポスター / 信州サイエンスミーティング（信州大学）</small>
+						</li>
+						<li>
+							<span class="when">2019/2/23</span>
+							宇宙線ミューオンのβ崩壊からニュートリノの質量を探る<br />
+							<small>ポスター / KEKサマーチャレンジ世代間交流会（KEK）</small>
+						</li>
+					</ul>
+
+					<h3>受賞</h3>
+					<ul class="history">
+						<li>
+							<span class="when">2021/9</span>
+							<a href="https://www.jps.or.jp/activities/awards/gakusei/2021_student_presentation_award.php" target="_blank" rel="noopener noreferrer">日本物理学会2021秋季大会 学生優秀発表賞</a>
+						</li>
+						<li>
+							<span class="when">2020/3</span>
+							信州大学 理学部 理学科 物理学コース 卒業研究発表 最優秀ポスター賞
+						</li>
+					</ul>
+
+					<h3>インターンシップ</h3>
+					<ul class="history">
+						<li><span class="when">2020/8</span>CERN summer student 2020（Covid-19流行のため現地実習中止）</li>
+						<li><span class="when">2018/8</span>第12回KEKサマーチャレンジ</li>
+					</ul>
 					<h2>興味のあること</h2>
 					<ul>
 						{profile.interests.map((t) => <li>{t}</li>)}
@@ -43,6 +94,22 @@ import { profile } from '../data/profile';
 		font-size: clamp(36px, 6vw, 52px);
 		font-weight: 900;
 		line-height: 1.2;
+	}
+	.history {
+		list-style: none;
+		padding-left: 0;
+	}
+	.history li {
+		margin: 0 0 12px;
+	}
+	.when {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: 13px;
+		color: var(--muted);
+	}
+	.history small {
+		color: var(--muted);
 	}
 	.lead {
 		margin: 0 0 8px;

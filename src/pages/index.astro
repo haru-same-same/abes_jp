@@ -9,6 +9,8 @@ import { AUTHOR, SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 import { certifications, profile, running } from '../data/profile';
 import runs from '../data/runs.json';
 import { getPosts } from '../lib/posts';
+import { Image } from 'astro:assets';
+import avatar from '../assets/avatar.jpg';
 
 const posts = await getPosts();
 const latest = posts[0];
@@ -69,7 +71,7 @@ const interestTones = ['blue', 'lavender', 'mint'];
 				</section>
 
 				<section class="card profile" aria-label="プロフィール">
-					<div class="avatar" aria-hidden="true">SA</div>
+					<Image class="avatar" src={avatar} width={184} height={184} alt="" loading="eager" />
 					<div>
 						<p class="role display">{profile.role}</p>
 						<p class="now">{profile.now}</p>
@@ -274,15 +276,9 @@ const interestTones = ['blue', 'lavender', 'mint'];
 		width: 92px;
 		height: 92px;
 		border-radius: 50%;
+		object-fit: cover;
 		background: var(--blue);
 		box-shadow: 0 0 0 4px #fff, 0 0 0 6px var(--blue);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-family: var(--font-display);
-		font-weight: 900;
-		font-size: 26px;
-		color: var(--blue-ink);
 	}
 	.role {
 		margin: 0 0 4px;
