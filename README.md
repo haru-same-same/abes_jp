@@ -21,10 +21,10 @@ npm run preview  # ビルド結果を確認
 
 トップページの「走行距離」は `src/data/runs.json` の月ごとの合計を表示する。月に1回くらい、次の手順で更新する。
 
-1. スマホの Samsung Health で「設定 → 個人データをダウンロード」を実行する
-2. 書き出されたフォルダ（または zip）を `health-data/` にコピーする
-3. `npm run update-runs` を実行する
+1. Samsung アカウントの「個人情報のダウンロード」で Samsung Health のデータをダウンロードする
+2. 届いた zip のうち `samsungcloud_*_access.zip` を `health-data/` に置く（展開しない）
+3. `npm run update-runs` を実行し、聞かれたら zip のパスワードを入力する
 
-`update-runs` は `health-data/` の一番新しい書き出しを集計して `src/data/runs.json` を更新し、そのファイルだけをコミットして push する。集計だけしたいときは `npm run import-runs -- <フォルダ>` を使う。
+`update-runs` は `health-data/` の一番新しい zip から `Exercise/Exercise.csv` だけを取り出して集計し、`src/data/runs.json` を更新し、そのファイルだけをコミットして push する。集計だけしたいときは `npm run import-runs -- <Exercise.csv>` を使う。展開には 7z（`brew install p7zip`）が必要。
 
 `health-data/` の中身は `.gitignore` で除外していて、コミットされない（書き出しには心拍数などの健康データが含まれるため）。リポジトリに入るのは月ごとの合計距離だけ。

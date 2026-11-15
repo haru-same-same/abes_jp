@@ -1,106 +1,114 @@
 // Samsung Health の書き出しデータから、月ごとのランニング距離を集計する
 //
-//   npm run import-runs -- <書き出したフォルダ or exercise の CSV ファイル>
+//   npm run import-runs -- <展開したフォルダ or Exercise.csv>
 //
 // 結果は src/data/runs.json に「月ごとの合計距離」だけを書き出す。
-// 心拍数などを含む元の CSV はリポジトリに入れないこと。
+// 心拍数や位置情報を含む元の CSV はリポジトリに入れないこと。
+//
+// 対応している形式: Samsung アカウントの個人情報ダウンロード
+// （samsungcloud_*_access.zip の中の Exercise/Exercise.csv）
+//   - 1行目が列名（exercise_type, start_time, distance, time_offset など）
+//   - start_time は走った地域の時刻（"YYYY-MM-DD HH:mm"）
+//   - distance はメートル
+//   - 位置情報などで数百 MB になるので、1行ずつ読む
 
-import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { createReadStream, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { createInterface } from 'node:readline';
 
 // Samsung Health の運動の種類コード。1002 = ランニング
 // （トレッドミルなど他の種類も数えたい場合はここに足す）
-const RUN_TYPES = new Set([1002]);
+const RUN_TYPES = new Set(['1002']);
 const OUT = new URL('../src/data/runs.json', import.meta.url);
 
 const input = process.argv[2];
 if (!input) {
-	console.error('使い方: npm run import-runs -- <Samsung Health の書き出しフォルダ or exercise の CSV>');
+	console.error('使い方: npm run import-runs -- <展開したフォルダ or Exercise.csv>');
 	process.exit(1);
 }
 
 const csvPath = findExerciseCsv(input);
 console.log(`読み込み: ${csvPath}`);
-const rows = parseSamsungCsv(readFileSync(csvPath, 'utf8'));
-
-const col = (name) => {
-	const key = Object.keys(rows[0] ?? {}).find((k) => k === name || k.endsWith(`.${name}`));
-	if (!key) throw new Error(`列 "${name}" が見つかりません。CSV の形式が想定と違う可能性があります`);
-	return key;
-};
-const typeKey = col('exercise_type');
-const distKey = col('distance');
-const startKey = col('start_time');
-const offsetKey = Object.keys(rows[0] ?? {}).find((k) => k.endsWith('time_offset'));
 
 const months = {};
+let header = null;
+let total = 0;
 let runs = 0;
-for (const row of rows) {
-	if (!RUN_TYPES.has(Number(row[typeKey]))) continue;
-	const meters = Number(row[distKey]);
+for await (const record of readCsvRecords(csvPath)) {
+	if (!header) {
+		header = record;
+		for (const name of ['exercise_type', 'start_time', 'distance']) {
+			if (!header.includes(name)) throw new Error(`列 "${name}" が見つかりません。CSV の形式が想定と違う可能性があります`);
+		}
+		continue;
+	}
+	if (record.length === 1 && record[0] === '') continue;
+	total++;
+	const get = (name) => record[header.indexOf(name)] ?? '';
+	if (!RUN_TYPES.has(get('exercise_type').trim())) continue;
+	const meters = Number(get('distance'));
 	if (!Number.isFinite(meters) || meters <= 0) continue;
-	const month = localMonth(row[startKey], offsetKey ? row[offsetKey] : '');
+	const month = /^(\d{4}-\d{2})-\d{2}/.exec(get('start_time').trim())?.[1];
 	if (!month) continue;
 	months[month] = (months[month] ?? 0) + meters;
 	runs++;
 }
+if (!header) throw new Error(`${csvPath} が空です`);
 
 const sorted = Object.fromEntries(
 	Object.keys(months)
 		.sort()
 		.map((k) => [k, Math.round(months[k] / 100) / 10]),
 );
-// 「今月」の判定に使う日時。書き出しファイル名の日時（日本時間）を優先する
-const exportedAt = exportTimeFromName(basename(csvPath)) ?? new Date();
+// 「今月」の判定に使う日時。書き出し名の日付 → CSV の更新日時の順で使う
+const exportedAt = exportDateFromPath(csvPath) ?? statSync(csvPath).mtime;
 const data = { updatedAt: exportedAt.toISOString(), months: sorted };
 writeFileSync(OUT, JSON.stringify(data, null, '\t') + '\n');
 
-console.log(`ラン ${runs} 件を集計しました（全 ${rows.length} 件中）`);
+console.log(`ラン ${runs} 件を集計しました（全 ${total} 件中）`);
 for (const [m, km] of Object.entries(sorted).slice(-6)) console.log(`  ${m}: ${km} km`);
 console.log(`書き出し: src/data/runs.json`);
 
-/** フォルダが渡されたら、その中（サブフォルダも含む）の exercise の CSV を探す */
+/** フォルダが渡されたら、その中（サブフォルダも含む）の Exercise.csv を探す */
 function findExerciseCsv(path) {
 	if (!statSync(path).isDirectory()) return path;
-	const pattern = /^com\.samsung\.shealth\.exercise\.\d+\.csv$/;
 	const found = readdirSync(path, { recursive: true })
 		.map(String)
-		.filter((f) => pattern.test(basename(f)));
-	if (found.length === 0) {
-		throw new Error(`${path} に com.samsung.shealth.exercise.*.csv が見つかりません`);
-	}
-	// 複数あればファイル名の日時が一番新しいもの
-	found.sort((a, b) => basename(a).localeCompare(basename(b)));
-	return join(path, found.at(-1));
+		.filter((f) => /(^|[/\\])Exercise\.csv$/.test(f));
+	if (found.length === 0) throw new Error(`${path} に Exercise/Exercise.csv が見つかりません`);
+	if (found.length > 1) throw new Error(`${path} に Exercise.csv が複数あります: ${found.join(', ')}`);
+	return join(path, found[0]);
 }
 
-/** "com.samsung.shealth.exercise.20261113160000.csv" → 日本時間の 2026-11-13 16:00:00 */
-function exportTimeFromName(name) {
-	const m = /\.(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})\.csv$/.exec(name);
+/** "samsungcloud_xxx_20261113_access" → 日本時間の 2026-11-13 00:00 */
+function exportDateFromPath(path) {
+	const m = /_(\d{4})(\d{2})(\d{2})_access/.exec(path);
 	if (!m) return null;
-	const d = new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}+09:00`);
+	const d = new Date(`${m[1]}-${m[2]}-${m[3]}T00:00:00+09:00`);
 	return Number.isNaN(d.valueOf()) ? null : d;
 }
 
-/**
- * Samsung Health の CSV を読む。
- * 1行目はデータ種別などのメタ情報、2行目が列名、3行目以降がデータ。
- */
-function parseSamsungCsv(text) {
-	const lines = parseCsv(text.replace(/^﻿/, ''));
-	const headerIndex = lines.findIndex((l) => l.some((c) => c.endsWith('exercise_type')));
-	if (headerIndex === -1) throw new Error(`${basename(csvPath)} に exercise_type 列がありません`);
-	const header = lines[headerIndex];
-	return lines
-		.slice(headerIndex + 1)
-		.filter((l) => l.some((c) => c !== ''))
-		.map((l) => Object.fromEntries(header.map((h, i) => [h, l[i] ?? ''])));
+/** 引用符・改行を含むフィールドに対応して、CSV を1レコードずつ返す */
+async function* readCsvRecords(path) {
+	const lines = createInterface({ input: createReadStream(path, 'utf8'), crlfDelay: Infinity });
+	let pending = null;
+	let first = true;
+	for await (let line of lines) {
+		if (first) {
+			line = line.replace(/^﻿/, '');
+			first = false;
+		}
+		pending = pending === null ? line : `${pending}\n${line}`;
+		// 引用符の数が奇数なら、フィールドの途中で改行している
+		if ((pending.match(/"/g)?.length ?? 0) % 2 === 1) continue;
+		yield parseCsvLine(pending);
+		pending = null;
+	}
+	if (pending !== null) yield parseCsvLine(pending);
 }
 
-/** 引用符と改行を含むフィールドに対応した最小限の CSV パーサー */
-function parseCsv(text) {
-	const out = [];
-	let row = [];
+function parseCsvLine(text) {
+	const row = [];
 	let field = '';
 	let quoted = false;
 	for (let i = 0; i < text.length; i++) {
@@ -115,29 +123,8 @@ function parseCsv(text) {
 		else if (c === ',') {
 			row.push(field);
 			field = '';
-		} else if (c === '\n' || c === '\r') {
-			if (c === '\r' && text[i + 1] === '\n') i++;
-			row.push(field);
-			out.push(row);
-			row = [];
-			field = '';
 		} else field += c;
 	}
-	if (field !== '' || row.length) {
-		row.push(field);
-		out.push(row);
-	}
-	return out;
-}
-
-/**
- * start_time（UTC の "YYYY-MM-DD HH:mm:ss.SSS"）と time_offset（"UTC+0900"）から
- * 走った地域の時刻での "YYYY-MM" を返す。オフセットがなければ日本時間とみなす。
- */
-function localMonth(start, offset) {
-	const t = Date.parse(start.trim().replace(' ', 'T') + 'Z');
-	if (Number.isNaN(t)) return null;
-	const m = /([+-])(\d{2}):?(\d{2})/.exec(offset ?? '');
-	const minutes = m ? (m[1] === '-' ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3])) : 9 * 60;
-	return new Date(t + minutes * 60000).toISOString().slice(0, 7);
+	row.push(field);
+	return row;
 }
